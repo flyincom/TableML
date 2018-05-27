@@ -30,13 +30,14 @@ using System.Text;
 
 namespace TableML
 {
+    //Exception报错类型
     public enum TableFileExceptionType
     {
         DuplicatedKey,
 
         HeadLineNull,
         MetaLineNull, // 第二行
-        NotFoundHeader,
+        NotFoundHeadzer,
         NotFoundGetMethod,
         NotFoundPrimaryKey,
         NotFoundRow,
@@ -59,6 +60,7 @@ namespace TableML
         public static TableFileExceptionDelegate GlobalExceptionEvent;
     }
 
+    //表结构。包括内容，Encoding
     public class TableFileConfig
     {
         /// <summary>
