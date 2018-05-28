@@ -43,9 +43,7 @@ namespace TableML
         NotFoundRow,
     }
 
-    /// <summary>
-    /// 表头信息
-    /// </summary>
+    //表头信息
     public class HeaderInfo
     {
         public int ColumnIndex;
@@ -85,8 +83,7 @@ namespace TableML
     }
 
     /// <summary>
-    /// Simple way of default table file, all value is string
-    /// 默认的TableFile，所有的单元格内容会被视为string类型，包括数字也是string类型
+    ///默认的TableFile，所有的单元格内容会被视为string类型，包括数字也是string类型
     /// </summary>
     public class TableFile : TableFile<TableFileRow>
     {
