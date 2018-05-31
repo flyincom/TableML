@@ -1,43 +1,28 @@
-﻿#region Copyright (c) 2015 KEngine / Kelly <http://github.com/mr-kelly>, All rights reserved.
-
-// KEngine - AssetBundle framework for Unity3D
-// ===================================
-// 
-// Author:  Kelly
-// Email: 23110388@qq.com
-// Github: https://github.com/mr-kelly/KEngine
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library.
-
-#endregion
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace TableML
 {
-    /// <summary>
-    /// 默认的，用于TableFile类的通用行类，所有类被视为string
-    /// </summary>
+    //行类，用于TableFile类的通用行类，所有项都是string
     public partial class TableFileRow : TableRowFieldParser
     {
-        /// <summary>
-        /// TableFileRow's row number of table
-        /// </summary>
+        //这行是第几行
         public int RowNumber { get; internal set; }
 
+        //HeaderName——HeaderInfo。每一项
+        public Dictionary<string, HeaderInfo> HeaderInfos
+        {
+            get; internal set;
+        }
+
+        //这行的所有值（都是string）
+        public string[] Values
+        {
+            get; internal set;
+        }
+
         /// <summary>
-        /// 是否自动使用反射解析，不自动，则使用Parse方法
+        /// 是否自动使用反射解析，自动，则使用Parse方法。目前用反射的方式
         /// </summary>
         public virtual bool IsAutoParse
         {
@@ -52,22 +37,12 @@ namespace TableML
             
         }
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="T:TableML.TableFileRow"/> class.
-		/// </summary>
-		/// <param name="rowNumber">Row number.</param>
-		/// <param name="headerInfos">Header infos.</param>
         public TableFileRow(int rowNumber, Dictionary<string, HeaderInfo> headerInfos)
         {
             Ctor(rowNumber, headerInfos);
         }
 
-		/// <summary>
-		/// Ctor the specified rowNumber and headerInfos.
-		/// `public` for prevent IL2CPP striping
-		/// </summary>
-		/// <param name="rowNumber">Row number.</param>
-		/// <param name="headerInfos">Header infos.</param>
+        //避免IL2CPP striping
         internal void Ctor(int rowNumber, Dictionary<string, HeaderInfo> headerInfos)
         {
             RowNumber = rowNumber;
@@ -75,53 +50,24 @@ namespace TableML
             Values = new string[headerInfos.Count];
         }
 
-        /// <summary>
-        /// When true, will use reflection to map the Tab File
-        /// </summary>
-        //public virtual bool IsAutoParse
-        //{
-        //    get { return false; }
-        //}
-
-        /// <summary>
-        /// Table Header, name and type definition
-        /// </summary>
-        public Dictionary<string, HeaderInfo> HeaderInfos { get; internal set; }
-
-        /// <summary>
-        /// Store values of this row
-        /// </summary>
-        public string[] Values { get; internal set; }
-
-        /// <summary>
-        /// Cache save the row values
-        /// </summary>
-        /// <param name="cellStrs"></param>
+        //空方法
         public virtual void Parse(string[] cellStrs)
         {
             
         }
 
-        /// <summary>
-        /// Use first object of array as primary key!
-        /// </summary>
         public object PrimaryKey
         {
             get { return GetPrimaryKey(); }
         }
 
-        /// <summary>
-        /// By Default, primary key is the first column.
-        /// </summary>
+        //默认第一列就是PrimaryKey
         public virtual object GetPrimaryKey()
         {
             return Get(0);
         }
 
-		/// <summary>
-		/// Get value by the specified index, real implements of all `Get` method
-		/// </summary>
-		/// <param name="index">Index.</param>
+        //某一列的数据
         public virtual object Get(int index)
         {
             if (index > Values.Length || index < 0)
@@ -132,20 +78,13 @@ namespace TableML
             return Values[index];
         }
 
-		/// <summary>
-		/// Get the specified headerName.
-		/// </summary>
-		/// <param name="headerName">Header name.</param>
+        //this[headerName]
         public string Get(string headerName)
         {
             return this[headerName];
         }
 
-        /// <summary>
-        /// Get Value by Indexer
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        //某一列的string数据，根据index来取
         public string this[int index]
         {
             get
@@ -155,11 +94,7 @@ namespace TableML
             set { Values[index] = value; }
         }
 
-        /// <summary>
-        /// Get or set Value by Indexer, be careful the `newline` character!
-        /// </summary>
-        /// <param name="headerName"></param>
-        /// <returns></returns>
+        //某一列的string数据，根据headerName来取，先获取HeaderInfo，然后根据headerInfo.ColumnIndex列来取值
         public string this[string headerName]
         {
             get
@@ -183,5 +118,6 @@ namespace TableML
                 this[headerInfo.ColumnIndex] = value;
             }
         }
+
     }
 }

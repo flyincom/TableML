@@ -1,30 +1,4 @@
-﻿#region Copyright (c) 2015 KEngine / Kelly <http://github.com/mr-kelly>, All rights reserved.
-
-// KEngine - Toolset and framework for Unity3D
-// ===================================
-// 
-// Filename: SettingModuleEditor.cs
-// Date:     2015/12/03
-// Author:  Kelly
-// Email: 23110388@qq.com
-// Github: https://github.com/mr-kelly/KEngine
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library.
-
-#endregion
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,9 +7,6 @@ using DotLiquid;
 
 namespace TableML.Compiler
 {
-	/// <summary>
-	/// BatchCompiler, compile
-	/// </summary>
 	public class BatchCompiler
 	{
 		/// <summary>
@@ -43,33 +14,20 @@ namespace TableML.Compiler
 		/// </summary>
 		//public static bool AutoGenerateCode = true;
 
-		/// <summary>
-		/// 当生成的类名，包含数组中字符时，不生成代码
-		/// </summary>
-		/// <example>
+		/// 当生成的类名，包含数组中字符时，不生成代码。比如
 		/// GenerateCodeFilesFilter = new []
 		/// {
 		///     "SubdirSubSubDirExample3",
 		/// };
-		/// </example>
 		public string[] GenerateCodeFilesFilter = null;
 
-		/// <summary>
-		/// 条件编译变量
-		/// </summary>
+		//条件编译变量
 		public string[] CompileSettingConditionVars;
 
-		/// <summary>
-		/// 可以为模板提供额外生成代码块！返回string即可！
-		/// 自定义[InitializeOnLoad]的类并设置这个委托
-		/// </summary>
-		public CustomExtraStringDelegate CustomExtraString;
+        /// 可以为模板提供额外生成代码块！返回string即可！自定义[InitializeOnLoad]的类并设置这个委托
+        public CustomExtraStringDelegate CustomExtraString;
 		public delegate string CustomExtraStringDelegate(TableCompileResult tableCompileResult);
 
-		/// <summary>
-		/// Generate static code from settings
-		/// </summary>
-		/// <param name="templateVars"></param>
 		void GenerateCode(string templateString, string genCodeFilePath, string nameSpace, List<Hash> files)
 		{
 
@@ -114,51 +72,64 @@ namespace TableML.Compiler
 			// make unity compile
 			//AssetDatabase.Refresh();
 		}
-		/// <summary>
-		/// Compile one directory 's all settings, and return behaivour results
-		/// </summary>
-		/// <param name="sourcePath"></param>
-		/// <param name="compilePath"></param>
-		/// <param name="genCodeFilePath"></param>
-		/// <param name="changeExtension"></param>
-		/// <param name="forceAll">no diff! only force compile will generate code</param>
-		/// <returns></returns>
-		public List<TableCompileResult> CompileTableMLAll(string sourcePath, string compilePath, 
-		                                                  string genCodeFilePath, string genCodeTemplateString = null, string nameSpace = "AppSettings", string changeExtension = ".tml", string settingCodeIgnorePattern = null, bool forceAll = false)
+
+        //主要接口。开始打包流程
+		public List<TableCompileResult> CompileTableMLAll(
+            string sourcePath,                      //表根目录
+            string compilePath,                     //输出目录
+            string genCodeFilePath,                 //生成代码目录
+            string genCodeTemplateString = null,    //模板
+            string nameSpace = "AppSettings",       //命名空间
+            string changeExtension = ".tml",        //后缀
+            string settingCodeIgnorePattern = null, //代码不管布局
+            bool forceAll = false                   //
+            )
 		{
 			var results = new List<TableCompileResult>();
 			var compileBaseDir = compilePath;
-			// excel compiler
-			var compiler = new Compiler(new CompilerConfig() { ConditionVars = CompileSettingConditionVars });
 
+            //创建一个Compiler
+            var compiler = new Compiler(new CompilerConfig() { ConditionVars = CompileSettingConditionVars });
+
+            //Excel表的后缀
 			var excelExt = new HashSet<string>() { ".xls", ".xlsx", ".tsv" };
+
+            //导出表的后缀
 		    var copyExt = new HashSet<string>() {".txt"};
+
 			var findDir = sourcePath;
+
 			try
 			{
+                //获取目录下所有的文件
 				var allFiles = Directory.GetFiles(findDir, "*.*", SearchOption.AllDirectories);
 				var allFilesCount = allFiles.Length;
 				var nowFileIndex = -1; // 开头+1， 起始为0
 				foreach (var excelPath in allFiles)
 				{
 					nowFileIndex++;
+                    //文件后缀
 					var ext = Path.GetExtension(excelPath);
+                    //文件名称
 					var fileName = Path.GetFileNameWithoutExtension(excelPath);
-
+                    //相对路径
                     var relativePath = excelPath.Replace(findDir, "").Replace("\\", "/");
                     if (relativePath.StartsWith("/"))
                         relativePath = relativePath.Substring(1);
-					if (excelExt.Contains(ext) && !fileName.StartsWith("~")) // ~开头为excel临时文件，不要读
-					{
-                        // it's an excel file
 
-						var compileToPath = string.Format("{0}/{1}", compileBaseDir,
-							Path.ChangeExtension(relativePath, changeExtension));
-						var srcFileInfo = new FileInfo(excelPath);
+					if (excelExt.Contains(ext) && !fileName.StartsWith("~"))
+					{
+                        //如果是Excel文件。~开头为excel临时文件，不要读
+
+                        //输出目录
+                        var compileToPath = string.Format("{0}/{1}", compileBaseDir, Path.ChangeExtension(relativePath, changeExtension));
+
+                        //FileInfo
+                        var srcFileInfo = new FileInfo(excelPath);
 
 						Console.WriteLine("Compiling Excel to Tab..." + string.Format("{0} -> {1}", excelPath, compileToPath));
 
-						// 如果已经存在，判断修改时间是否一致，用此来判断是否无需compile，节省时间
+						// 如果输出目录已经存在该文件，判断修改时间是否一致，用此来判断是否无需compile，节省时间
 						bool doCompile = true;
 						if (File.Exists(compileToPath))
 						{
@@ -170,11 +141,13 @@ namespace TableML.Compiler
 								doCompile = false;
 							}
 						}
+
 						if (doCompile)
 						{
 							Console.WriteLine("[SettingModule]Compile from {0} to {1}", excelPath, compileToPath);
 
-							var compileResult = compiler.Compile(excelPath, compileToPath, compileBaseDir, doCompile);
+                            //Compiler.Compile
+                            var compileResult = compiler.Compile(excelPath, compileToPath, compileBaseDir, doCompile);
 
 							// 添加模板值
 							results.Add(compileResult);
@@ -184,10 +157,10 @@ namespace TableML.Compiler
 
 						}
 					}
-                    else if (copyExt.Contains(ext)) // .txt file, just copy
+                    else if (copyExt.Contains(ext))
                     {
-                        // just copy the files with these ext
-						var compileToPath = string.Format("{0}/{1}", compileBaseDir,
+                        //如果是txt文件，直接拷贝
+                        var compileToPath = string.Format("{0}/{1}", compileBaseDir,
 							relativePath);
                         var compileToDir = Path.GetDirectoryName(compileToPath);
                         if (!Directory.Exists(compileToDir))
@@ -274,14 +247,13 @@ namespace TableML.Compiler
 			{
 				//EditorUtility.ClearProgressBar();
 			}
+
 			return results;
 		}
 	}
 
-	/// <summary>
-	/// 用于liquid模板
-	/// </summary>
-	public class TableTemplateVars
+    //用于liquid模板
+    public class TableTemplateVars
 	{
 		public delegate string CustomClassNameDelegate(string originClassName, string filePath);
 
@@ -314,9 +286,7 @@ namespace TableML.Compiler
 			get { return (from f in FieldsInternal select Hash.FromAnonymousObject(f)).ToList(); }
 		}
 
-		/// <summary>
-		/// Get primary key, the first column field
-		/// </summary>
+		//第一列的成员
 		public Hash PrimaryKeyField
 		{
 			get { return Fields[0]; }
@@ -375,4 +345,5 @@ namespace TableML.Compiler
 
 		}
 	}
+
 }

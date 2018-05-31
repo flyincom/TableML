@@ -1,36 +1,10 @@
-﻿#region Copyright (c) 2015 KEngine / Kelly <http://github.com/mr-kelly>, All rights reserved.
-
-// KEngine - AssetBundle framework for Unity3D
-// ===================================
-// 
-// Author:  Kelly
-// Email: 23110388@qq.com
-// Github: https://github.com/mr-kelly/KEngine
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library.
-
-#endregion
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 
 namespace TableML
 {
-    /// <summary>
-    /// Write the TabFile!
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
+    //将TableFile中的数据，写出到某个文件中。就是转表
     public class TableFileWriter : IDisposable
     {
         public readonly TableFile TabFile;
@@ -45,10 +19,12 @@ namespace TableML
             TabFile = tabFile;
         }
 
+        //将TableFile中的数据拼接成字符串
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
+            //表头
             int index = 0;
             foreach (var header in TabFile.Headers.Values)
             {
@@ -86,10 +62,11 @@ namespace TableML
                 }
                 sb.Append("\n");
             }
+
             return sb.ToString();
         }
 
-        // 将当前保存成文件
+        // 调用ToString()，将数据保存成文件
         public bool Save(string fileName)
         {
             lock (this)
@@ -97,14 +74,11 @@ namespace TableML
                 bool result = false;
                 try
                 {
-                    //using (FileStream fs = )
+                    using (StreamWriter sw = new StreamWriter(new FileStream(fileName, FileMode.Create), System.Text.Encoding.UTF8))
                     {
-                        using (StreamWriter sw = new StreamWriter(new FileStream(fileName, FileMode.Create), System.Text.Encoding.UTF8))
-                        {
-                            sw.Write(ToString());
+                        sw.Write(ToString());
 
-                            result = true;
-                        }
+                        result = true;
                     }
                 }
                 catch (IOException e)
@@ -117,6 +91,7 @@ namespace TableML
             }
         }
 
+        //创建一个TableFileRow
         public TableFileRow NewRow()
         {
             int rowId = TabFile.Rows.Count + 1;
@@ -147,6 +122,8 @@ namespace TableML
         {
             return NewColumn(colName, "");
         }
+
+        //创建一列，主要是创建一个HeaderInfo并保存到TableFile中
         public int NewColumn(string colName, string defineStr)
         {
             if (string.IsNullOrEmpty(colName))

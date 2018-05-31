@@ -3,19 +3,19 @@ using System.Collections.Generic;
 
 namespace TableML
 {
-    /// <summary>
-    /// Row parser for TableObject, auto convert string and number(double)
-    /// </summary>
+    //行类。增加了自动转string和number
     public class TableObjectRow : TableFileRow
     {
         public TableObjectRow()
         {
         }
 
-        public TableObjectRow(int rowNumber, Dictionary<string, HeaderInfo> headerInfos) : base(rowNumber, headerInfos)
+        public TableObjectRow(int rowNumber, Dictionary<string, HeaderInfo> headerInfos) 
+            : base(rowNumber, headerInfos)
         {
         }
 
+        //PrimaryKey
         public override object GetPrimaryKey()
         {
             var key = base.GetPrimaryKey();
@@ -38,11 +38,7 @@ namespace TableML
             return this[headerName];
         }
 
-        /// <summary>
-        /// Get Value by Indexer
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        //该行某一列的值，根据index来取
         public new object this[int index]
         {
             get
@@ -63,6 +59,7 @@ namespace TableML
                 {
                     result = number;
                 }
+
                 return result;
             }
             set
@@ -71,11 +68,7 @@ namespace TableML
             }
         }
 
-        /// <summary>
-        /// Get or set Value by Indexer, be careful the `newline` character!
-        /// </summary>
-        /// <param name="headerName"></param>
-        /// <returns></returns>
+        //该行某一列的值，根据headerName来取，先获取HeaderInfo，然后根据headerInfo.ColumnIndex列来取值
         public new object this[string headerName]
         {
             get
@@ -88,6 +81,7 @@ namespace TableML
 
                 return this[headerInfo.ColumnIndex];
             }
+
             set
             {
                 HeaderInfo headerInfo;

@@ -3,16 +3,15 @@ using System.Collections.Generic;
 
 namespace TableML
 {
-    /// <summary>
-    /// Field parser, string to something, user can custom it with extensions
-    /// </summary>
-    public partial class TableRowFieldParser
+    //一行的基类。行成员解析，表的每一项都是string，这里就是对每一项进行解析
+    public class TableRowFieldParser
     {
         public string Get_String(string value, string defaultValue)
         {
             return Get_string(value, defaultValue);
         }
 
+        //都是调用这个方法获取string值，然后parse
         public string Get_string(string value, string defaultValue)
         {
             if (string.IsNullOrEmpty(value))

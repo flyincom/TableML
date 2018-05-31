@@ -21,9 +21,7 @@ namespace TableML.Compiler
         string GetString(string columnName, int row);
     }
 
-    /// <summary>
-    /// TSV格式的支持
-    /// </summary>
+    //TSV格式的支持
     public class SimpleTSVFile : ITableSourceFile
     {
         public Dictionary<string, int> ColName2Index { get; set; }
@@ -88,25 +86,19 @@ namespace TableML.Compiler
     /// </summary>
     public class SimpleExcelFile : ITableSourceFile
     {
-        //private Workbook Workbook_;
-        //private Worksheet Worksheet_;
         public Dictionary<string, int> ColName2Index { get; set; }
         public Dictionary<int, string> Index2ColName { get; set; }
         public Dictionary<string, string> ColName2Statement { get; set; } //  string,or something
         public Dictionary<string, string> ColName2Comment { get; set; } // string comment
 
         /// <summary>
-        /// Header, Statement, Comment, at lease 3 rows
-        /// 预留行数
+        /// Header, Statement, Comment, 预留3行数
         /// </summary>
         private const int PreserverRowCount = 3;
 
-        //private DataTable DataTable_;
         private string Path;
         private IWorkbook Workbook;
         private ISheet Worksheet;
-        //private TableFile _tableFile;
-        //public bool IsLoadSuccess = true;
         private int _columnCount;
 
         public SimpleExcelFile(string excelPath)
@@ -120,10 +112,7 @@ namespace TableML.Compiler
             ParseExcel(excelPath);
         }
 
-        /// <summary>
-        /// Parse Excel file to data grid
-        /// </summary>
-        /// <param name="filePath"></param>
+        //解析Excel表，保存到Dic中
         private void ParseExcel(string filePath)
         {
             using (var file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) // no isolation
@@ -136,61 +125,58 @@ namespace TableML.Compiler
                 {
                     throw new Exception(string.Format("无法打开Excel: {0}, 可能原因：正在打开？或是Office2007格式（尝试另存为）？ {1}", filePath,
                         e.Message));
-                    //IsLoadSuccess = false;
                 }
             }
-            //if (IsLoadSuccess)
+
+            if (Workbook == null)
+                throw new Exception("Null Workbook");
+
+            Worksheet = Workbook.GetSheetAt(0);
+            if (Worksheet == null)
+                throw new Exception("Null Worksheet");
+
+            var sheetRowCount = GetWorksheetCount();
+            if (sheetRowCount < PreserverRowCount)
+                throw new Exception(string.Format("At lease {0} rows of this excel", sheetRowCount));
+
+            // 列头名
+            var headerRow = Worksheet.GetRow(0);
+
+            // 列总数保存
+            int columnCount = _columnCount = headerRow.LastCellNum;
+
+            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
             {
-                if (Workbook == null)
-                    throw new Exception("Null Workbook");
+                var cell = headerRow.GetCell(columnIndex);
+                var headerName = cell != null ? cell.ToString().Trim() : ""; // trim!
+                ColName2Index[headerName] = columnIndex;
+                Index2ColName[columnIndex] = headerName;
+            }
 
-                //var dt = new DataTable();
+            // 表头声明
+            var statementRow = Worksheet.GetRow(1);
+            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+            {
+                var colName = Index2ColName[columnIndex];
+                var statementCell = statementRow.GetCell(columnIndex);
+                var statementString = statementCell != null ? statementCell.ToString() : "";
+                ColName2Statement[colName] = statementString;
+            }
 
-                Worksheet = Workbook.GetSheetAt(0);
-                if (Worksheet == null)
-                    throw new Exception("Null Worksheet");
-
-                var sheetRowCount = GetWorksheetCount();
-                if (sheetRowCount < PreserverRowCount)
-                    throw new Exception(string.Format("At lease {0} rows of this excel", sheetRowCount));
-
-                // 列头名
-                var headerRow = Worksheet.GetRow(0);
-                // 列总数保存
-                int columnCount = _columnCount = headerRow.LastCellNum;
-
-                for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
-                {
-                    var cell = headerRow.GetCell(columnIndex);
-                    var headerName = cell != null ? cell.ToString().Trim() : ""; // trim!
-                    ColName2Index[headerName] = columnIndex;
-                    Index2ColName[columnIndex] = headerName;
-                }
-                // 表头声明
-                var statementRow = Worksheet.GetRow(1);
-                for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
-                {
-                    var colName = Index2ColName[columnIndex];
-                    var statementCell = statementRow.GetCell(columnIndex);
-                    var statementString = statementCell != null ? statementCell.ToString() : "";
-                    ColName2Statement[colName] = statementString;
-                }
-                // 表头注释
-                var commentRow = Worksheet.GetRow(2);
-                for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
-                {
-                    var colName = Index2ColName[columnIndex];
-                    var commentCell = commentRow.GetCell(columnIndex);
-                    var commentString = commentCell != null ? commentCell.ToString() : "";
-                    ColName2Comment[colName] = commentString;
-                }
+            // 表头注释
+            var commentRow = Worksheet.GetRow(2);
+            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+            {
+                var colName = Index2ColName[columnIndex];
+                var commentCell = commentRow.GetCell(columnIndex);
+                var commentString = commentCell != null ? commentCell.ToString() : "";
+                ColName2Comment[colName] = commentString;
             }
         }
+        
         /// <summary>
         /// 是否存在列名
         /// </summary>
-        /// <param name="columnName"></param>
-        /// <returns></returns>
         public bool HasColumn(string columnName)
         {
             return ColName2Index.ContainsKey(columnName);
@@ -199,7 +185,6 @@ namespace TableML.Compiler
         /// <summary>
         /// 清除行内容
         /// </summary>
-        /// <param name="row"></param>
         public void ClearRow(int row)
         {
             var theRow = Worksheet.GetRow(row);
@@ -216,11 +201,7 @@ namespace TableML.Compiler
             return int.Parse(GetString(columnName, row));
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="columnName"></param>
-        /// <param name="dataRow">无计算表头的数据行数</param>
-        /// <returns></returns>
+        //dataRow是无计算表头的数据行数
         public string GetString(string columnName, int dataRow)
         {
             dataRow += PreserverRowCount;
@@ -247,7 +228,6 @@ namespace TableML.Compiler
         /// <summary>
         /// 不带3个预留头的数据总行数
         /// </summary>
-        /// <returns></returns>
         public int GetRowsCount()
         {
             return GetWorksheetCount() - PreserverRowCount;
@@ -338,6 +318,7 @@ namespace TableML.Compiler
             //    CDebug.LogError("是否打开了Excel表？");
             //}
         }
+
         public void Save()
         {
             Save(Path);
@@ -351,5 +332,7 @@ namespace TableML.Compiler
         {
             return _columnCount;
         }
+
     }
+
 }

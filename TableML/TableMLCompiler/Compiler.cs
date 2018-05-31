@@ -1,29 +1,4 @@
-﻿#region Copyright (c) 2015 KEngine / Kelly <http://github.com/mr-kelly>, All rights reserved.
-
-// KEngine - Toolset and framework for Unity3D
-// ===================================
-// 
-// Filename: SettingModuleEditor.cs
-// Date:     2015/12/03
-// Author:  Kelly
-// Email: 23110388@qq.com
-// Github: https://github.com/mr-kelly/KEngine
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library.
-
-#endregion
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,16 +7,11 @@ using System.Text.RegularExpressions;
 
 namespace TableML.Compiler
 {
-	
-    /// <summary>
-    /// Compile Excel to TSV
-    /// </summary>
+    //Excel转TSV
     public class Compiler
     {
 
-        /// <summary>
-        /// 编译时，判断格子的类型
-        /// </summary>
+        //编译时，判断格子的类型
         public enum CellType
         {
             Value,
@@ -53,9 +23,7 @@ namespace TableML.Compiler
         private readonly CompilerConfig _config;
 
         public Compiler()
-            : this(new CompilerConfig()
-            {
-            })
+            : this(new CompilerConfig(){})
         {
         }
 
@@ -63,7 +31,6 @@ namespace TableML.Compiler
         {
             _config = cfg;
         }
-
 
         private TableCompileResult DoCompilerExcelReader(string path, ITableSourceFile excelFile, string compileToFilePath = null, string compileBaseDir = null, bool doCompile = true)
         {
@@ -146,7 +113,6 @@ namespace TableML.Compiler
             if (doCompile)
             {
                 // 如果不需要真编译，获取头部信息就够了
-                // Data Rows
                 for (var startRow = 0; startRow < excelFile.GetRowsCount(); startRow++)
                 {
                     rowBuilder.Length = 0;
@@ -188,15 +154,17 @@ namespace TableML.Compiler
                                     break;
                                 }
 
-                                if (!ifCondtioning) // 这一行被#if 忽略掉了
+                                // 这一行被#if 忽略掉了
+                                if (!ifCondtioning)
                                     break;
 
-
-                                if (startRow != 0) // 不是第一行，往添加换行，首列
+                                // 不是第一行，往添加换行，首列
+                                if (startRow != 0)
                                     rowBuilder.Append("\n");
                             }
 
-                            if (loopColumn > 0 && loopColumn < columnCount) // 最后一列不需加tab
+                            // 最后一列不需加tab
+                            if (loopColumn > 0 && loopColumn < columnCount)
                                 rowBuilder.Append("\t");
 
                             // 如果单元格是字符串，换行符改成\\n
@@ -220,7 +188,6 @@ namespace TableML.Compiler
             }
             else
             {
-                // use default
                 exportPath = fileName + _config.ExportTabExt;
             }
 
@@ -250,22 +217,13 @@ namespace TableML.Compiler
             return renderVars;
         }
 
-        /// <summary>
-        /// 获取#if A B语法的变量名，返回如A B数组
-        /// </summary>
-        /// <param name="cellStr"></param>
-        /// <returns></returns>
+        //获取#if A B语法的变量名，返回如A B数组
         private string[] GetIfVars(string cellStr)
         {
             return cellStr.Replace("#if", "").Trim().Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        /// <summary>
-        /// 检查一个表头名，是否是可忽略的注释
-        /// 或检查一个字符串
-        /// </summary>
-        /// <param name="colNameStr"></param>
-        /// <returns></returns>
+        //检查一个表头名，是否是可忽略的注释。或检查一个字符串
         private CellType CheckCellType(string colNameStr)
         {
             if (colNameStr.StartsWith("#if"))
@@ -283,24 +241,14 @@ namespace TableML.Compiler
             return CellType.Value;
         }
 
-		/// <summary>
-		/// Compile the specified path, auto change extension to config `ExportTabExt`
-		/// </summary>
-		/// <param name="path">Path.</param>
+		// Compile the specified path, auto change extension to config `ExportTabExt`
 		public TableCompileResult Compile(string path)
 		{
 			var outputPath = System.IO.Path.ChangeExtension(path, this._config.ExportTabExt);
 			return Compile(path, outputPath);
 		}
 
-        /// <summary>
-        /// Compile a setting file, return a hash for template
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="compileToFilePath"></param>
-        /// <param name="compileBaseDir"></param>
-        /// <param name="doRealCompile">Real do, or just get the template var?</param>
-        /// <returns></returns>
+        // Compile a setting file, return a hash for template
         public TableCompileResult Compile(string path, string compileToFilePath, string compileBaseDir = null, bool doRealCompile = true)
         {
 			// 确保目录存在

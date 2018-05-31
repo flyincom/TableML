@@ -34,7 +34,7 @@ namespace TableML
     public enum TableFileExceptionType
     {
         DuplicatedKey,
-
+        NotFoundHeader,
         HeadLineNull,
         MetaLineNull, // 第二行
         NotFoundHeadzer,
@@ -43,7 +43,7 @@ namespace TableML
         NotFoundRow,
     }
 
-    //表头信息
+    //每一项的定义，ColumnIndex，Name，Meta
     public class HeaderInfo
     {
         public int ColumnIndex;
@@ -58,40 +58,39 @@ namespace TableML
         public static TableFileExceptionDelegate GlobalExceptionEvent;
     }
 
-    //表结构。包括内容，Encoding
+    //表元数据，Excel表先读到TableFileConfig中。包括ContentStreams，Contents，Encoding
     public class TableFileConfig
     {
-        /// <summary>
-        /// Contents use stream, will be more effective
-        /// </summary>
+        //用Stream更有效率
         public Stream[] ContentStreams;
 
-        /// <summary>
-        /// Use string to parse
-        /// </summary>
         public string[] Contents;
 
         public char[] Separators = new char[] { '\t' };
-        /// <summary>
-        /// How to handle error
-        /// </summary>
+
         public TableFileExceptionDelegate OnExceptionEvent;
-        /// <summary>
-        /// Default Encoding : UTF-8
-        /// </summary>
+
         public Encoding Encoding = Encoding.UTF8;
     }
 
-    /// <summary>
-    ///默认的TableFile，所有的单元格内容会被视为string类型，包括数字也是string类型
-    /// </summary>
+    //表类。所有的单元格内容会被视为string类型，包括数字也是string类型
     public class TableFile : TableFile<TableFileRow>
     {
-        public TableFile(string content) : base(new string[] { content }) { }
-        public TableFile(string[] contents) : base(contents) { }
-        public TableFile() : base() { }
-        public TableFile(string fileFullPath, Encoding encoding) : base(fileFullPath, encoding) { }
+        public TableFile(string content) 
+            : base(new string[] { content }) { }
 
+        public TableFile(string[] contents) 
+            : base(contents) { }
+
+        public TableFile() 
+            : base() { }
+
+        public TableFile(string fileFullPath, Encoding encoding) 
+            : base(fileFullPath, encoding) { }
+
+        //--------------------static方法
+
+        //创建一个TableFile
         public new static TableFile LoadFromString(params string[] content)
         {
             TableFile tabFile = new TableFile(content);

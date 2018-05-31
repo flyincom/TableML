@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 namespace TableML.Compiler
 {
-    /// <summary>
-    /// Invali Excel Exception
-    /// </summary>
+    //无效的Excel表，报这个错
     public class InvalidExcelException : Exception
     {
         public InvalidExcelException(string msg)
@@ -13,16 +11,19 @@ namespace TableML.Compiler
         }
     }
 
-    /// <summary>
-    /// 返回编译结果
-    /// </summary>
+    //编译结果。一个表一个TableCompileResult
     public class TableCompileResult
     {
+        //表
         public string TabFileFullPath { get; set; }
         public string TabFileRelativePath { get; set; }
-        public List<TableColumnVars> FieldsInternal { get; set; } // column + type
+
+        //每一列的数据TableColumnVars
+        public List<TableColumnVars> FieldsInternal { get; set; }
 
         public string PrimaryKey { get; set; }
+
+        //Excel表
         public ITableSourceFile ExcelFile { get; internal set; }
 
         public TableCompileResult()

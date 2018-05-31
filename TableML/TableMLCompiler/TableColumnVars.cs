@@ -1,24 +1,19 @@
 ﻿namespace TableML.Compiler
 {
-	/// <summary>
-	/// Table column metadata variables.
-	/// </summary>
+	//表的列变量
 	public class TableColumnVars
 	{
 		public int Index { get; set; }
+
+        //类型
 		public string Type { get; set; }
 
-		/// <summary>
 		/// 经过格式化，去掉[]的类型字符串，支持数组(int[] -> int_array), 字典(map[string]int) -> map_string_int
-		/// </summary>
 		public string TypeMethod
 		{
 			get { return Type.Replace(@"[]", "_array").Replace("<", "_").Replace(">", "").Replace(",", "_"); }
 		}
 
-		/// <summary>
-		/// 类型
-		/// </summary>
 		public string FormatType
 		{
 			get
