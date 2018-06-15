@@ -7,9 +7,7 @@ using NPOI.SS.UserModel;
 
 namespace TableML.Compiler
 {
-    /// <summary>
-    /// 读取带有头部、声明和注释的文件表格
-    /// </summary>
+    /// 读取带有头部、声明和注释的Excel表格，TSV文件
     public interface ITableSourceFile
     {
         Dictionary<string, int> ColName2Index { get; set; }
@@ -21,7 +19,7 @@ namespace TableML.Compiler
         string GetString(string columnName, int row);
     }
 
-    //TSV格式的支持
+    //TSV文件。用TableFile来解析
     public class SimpleTSVFile : ITableSourceFile
     {
         public Dictionary<string, int> ColName2Index { get; set; }
@@ -31,6 +29,7 @@ namespace TableML.Compiler
 
         private TableFile _tableFile;
         private int _columnCount;
+
         public SimpleTSVFile(string filePath)
         {
             ColName2Index = new Dictionary<string, int>();
@@ -64,6 +63,7 @@ namespace TableML.Compiler
                 ColName2Comment[header.HeaderName] = commentRow[header.ColumnIndex];
             }
         }
+
         public int GetRowsCount()
         {
             return _tableFile.GetRowCount() - 1; // 减去注释行
@@ -80,20 +80,15 @@ namespace TableML.Compiler
         }
     }
 
-    /// <summary>
-    /// 简单的NPOI Excel封装, 支持xls, xlsx 和 tsv
-    /// 带有头部、声明、注释
-    /// </summary>
+    //用NPOI解析Excel文件,用IWorkbook和ISheet来读取。支持xls, xlsx 和 tsv，带有头部、声明、注释
     public class SimpleExcelFile : ITableSourceFile
     {
         public Dictionary<string, int> ColName2Index { get; set; }
         public Dictionary<int, string> Index2ColName { get; set; }
-        public Dictionary<string, string> ColName2Statement { get; set; } //  string,or something
-        public Dictionary<string, string> ColName2Comment { get; set; } // string comment
+        public Dictionary<string, string> ColName2Statement { get; set; }
+        public Dictionary<string, string> ColName2Comment { get; set; }
 
-        /// <summary>
         /// Header, Statement, Comment, 预留3行数
-        /// </summary>
         private const int PreserverRowCount = 3;
 
         private string Path;
@@ -174,17 +169,13 @@ namespace TableML.Compiler
             }
         }
         
-        /// <summary>
         /// 是否存在列名
-        /// </summary>
         public bool HasColumn(string columnName)
         {
             return ColName2Index.ContainsKey(columnName);
         }
 
-        /// <summary>
         /// 清除行内容
-        /// </summary>
         public void ClearRow(int row)
         {
             var theRow = Worksheet.GetRow(row);
@@ -225,18 +216,13 @@ namespace TableML.Compiler
             return cell.ToString();
         }
 
-        /// <summary>
         /// 不带3个预留头的数据总行数
-        /// </summary>
         public int GetRowsCount()
         {
             return GetWorksheetCount() - PreserverRowCount;
         }
 
-        /// <summary>
         /// 工作表的总行数
-        /// </summary>
-        /// <returns></returns>
         private int GetWorksheetCount()
         {
             return Worksheet.LastRowNum + 1;
@@ -296,6 +282,7 @@ namespace TableML.Compiler
             if (emptyRow)
                 Worksheet.RemoveRow(row);
         }*/
+            
             //try
             {
                 using (var memStream = new MemoryStream())
@@ -324,10 +311,7 @@ namespace TableML.Compiler
             Save(Path);
         }
 
-        /// <summary>
         /// 获取列总数
-        /// </summary>
-        /// <returns></returns>
         public int GetColumnCount()
         {
             return _columnCount;

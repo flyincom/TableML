@@ -32,28 +32,36 @@ namespace TableML.Compiler
             _config = cfg;
         }
 
-        private TableCompileResult DoCompilerExcelReader(string path, ITableSourceFile excelFile, string compileToFilePath = null, string compileBaseDir = null, bool doCompile = true)
+        private TableCompileResult DoCompilerExcelReader(
+            string path, 
+            ITableSourceFile excelFile, 
+            string compileToFilePath = null, 
+            string compileBaseDir = null, 
+            bool doCompile = true)
         {
-            var renderVars = new TableCompileResult();
+            TableCompileResult renderVars = new TableCompileResult();
             renderVars.ExcelFile = excelFile;
             renderVars.FieldsInternal = new List<TableColumnVars>();
 
-            var tableBuilder = new StringBuilder();
-            var rowBuilder = new StringBuilder();
+            StringBuilder tableBuilder = new StringBuilder();
+            StringBuilder rowBuilder = new StringBuilder();
             var ignoreColumns = new HashSet<int>();
-            // Header Column
+
+            //遍历每一列名
             foreach (var colNameStr in excelFile.ColName2Index.Keys)
             {
                 var colIndex = excelFile.ColName2Index[colNameStr];
                 if (!string.IsNullOrEmpty(colNameStr))
                 {
-                    var isCommentColumn = CheckCellType(colNameStr) == CellType.Comment;
+                    bool isCommentColumn = CheckCellType(colNameStr) == CellType.Comment;
                     if (isCommentColumn)
                     {
+                        //注释列
                         ignoreColumns.Add(colIndex);
                     }
                     else
                     {
+                        //非注释列
                         if (colIndex > 0)
                             tableBuilder.Append("\t");
                         tableBuilder.Append(colNameStr);
@@ -61,17 +69,22 @@ namespace TableML.Compiler
                         string typeName = "string";
                         string defaultVal = "";
 
-                        var attrs = excelFile.ColName2Statement[colNameStr].Split(new char[] {'|', '/'}, StringSplitOptions.RemoveEmptyEntries);
-                        // Type
+                        //这一列的所有类型
+                        string[] attrs = excelFile.ColName2Statement[colNameStr].Split(new char[] {'|', '/'}, StringSplitOptions.RemoveEmptyEntries);
+
+                        //第一个是类型名称
                         if (attrs.Length > 0)
                         {
                             typeName = attrs[0];
                         }
-                        // Default Value
+
+                        //第二个是默认值
                         if (attrs.Length > 1)
                         {
                             defaultVal = attrs[1];
                         }
+
+                        //如果第三个是pk，说明是PrimaryKey
                         if (attrs.Length > 2)
                         {
                             if (attrs[2] == "pk")
@@ -98,7 +111,8 @@ namespace TableML.Compiler
             {
                 var colName = kv.Key;
                 var statementStr = kv.Value;
-                var colIndex = excelFile.ColName2Index[colName];
+
+                int colIndex = excelFile.ColName2Index[colName];
 
                 if (ignoreColumns.Contains(colIndex)) // comment column, ignore
                     continue;
@@ -109,7 +123,7 @@ namespace TableML.Compiler
             tableBuilder.Append("\n");
 
             // #if check, 是否正在if false模式, if false时，行被忽略
-            var ifCondtioning = true;
+            bool ifCondtioning = true;
             if (doCompile)
             {
                 // 如果不需要真编译，获取头部信息就够了
@@ -117,25 +131,25 @@ namespace TableML.Compiler
                 {
                     rowBuilder.Length = 0;
                     rowBuilder.Capacity = 0;
-                    var columnCount = excelFile.GetColumnCount();
+                    int columnCount = excelFile.GetColumnCount();
                     for (var loopColumn = 0; loopColumn < columnCount; loopColumn++)
                     {
                         if (!ignoreColumns.Contains(loopColumn)) // comment column, ignore 注释列忽略
                         {
-                            var columnName = excelFile.Index2ColName[loopColumn];
-                            var cellStr = excelFile.GetString(columnName, startRow);
+                            string columnName = excelFile.Index2ColName[loopColumn];
+                            string cellStr = excelFile.GetString(columnName, startRow);
 
                             if (loopColumn == 0)
                             {
-                                var cellType = CheckCellType(cellStr);
+                                CellType cellType = CheckCellType(cellStr);
                                 if (cellType == CellType.Comment) // 如果行首为#注释字符，忽略这一行)
                                     break;
 
                                 // 进入#if模式
                                 if (cellType == CellType.If)
                                 {
-                                    var ifVars = GetIfVars(cellStr);
-                                    var hasAllVars = true;
+                                    string[] ifVars = GetIfVars(cellStr);
+                                    bool hasAllVars = true;
                                     foreach (var var in ifVars)
                                     {
                                         if (_config.ConditionVars == null || 
@@ -180,7 +194,7 @@ namespace TableML.Compiler
                 }
             }
             
-            var fileName = Path.GetFileNameWithoutExtension(path);
+            string fileName = Path.GetFileNameWithoutExtension(path);
             string exportPath;
             if (!string.IsNullOrEmpty(compileToFilePath))
             {
@@ -191,7 +205,7 @@ namespace TableML.Compiler
                 exportPath = fileName + _config.ExportTabExt;
             }
 
-            var exportDirPath = Path.GetDirectoryName(exportPath);
+            string exportDirPath = Path.GetDirectoryName(exportPath);
             if (!Directory.Exists(exportDirPath))
                 Directory.CreateDirectory(exportDirPath);
 
@@ -201,11 +215,11 @@ namespace TableML.Compiler
 
 
             // 基于base dir路径
-            var tabFilePath = exportPath; // without extension
-			var fullTabFilePath = Path.GetFullPath(tabFilePath).Replace("\\", "/");;
+            string tabFilePath = exportPath; // without extension
+            string fullTabFilePath = Path.GetFullPath(tabFilePath).Replace("\\", "/");;
             if (!string.IsNullOrEmpty(compileBaseDir))
             {
-				var fullCompileBaseDir = Path.GetFullPath(compileBaseDir).Replace("\\", "/");;
+                string fullCompileBaseDir = Path.GetFullPath(compileBaseDir).Replace("\\", "/");;
 				tabFilePath = fullTabFilePath.Replace(fullCompileBaseDir, ""); // 保留后戳
             }
             if (tabFilePath.StartsWith("/"))
@@ -230,6 +244,7 @@ namespace TableML.Compiler
                 return CellType.If;
             if (colNameStr.StartsWith("#endif"))
                 return CellType.Endif;
+            
             foreach (var commentStartsWith in _config.CommentStartsWith)
             {
                 if (colNameStr.ToLower().Trim().StartsWith(commentStartsWith.ToLower()))
@@ -244,7 +259,7 @@ namespace TableML.Compiler
 		// Compile the specified path, auto change extension to config `ExportTabExt`
 		public TableCompileResult Compile(string path)
 		{
-			var outputPath = System.IO.Path.ChangeExtension(path, this._config.ExportTabExt);
+            string outputPath = System.IO.Path.ChangeExtension(path, this._config.ExportTabExt);
 			return Compile(path, outputPath);
 		}
 
@@ -253,18 +268,21 @@ namespace TableML.Compiler
         {
 			// 确保目录存在
 			compileToFilePath = Path.GetFullPath(compileToFilePath);
-            var compileToFileDirPath = Path.GetDirectoryName(compileToFilePath);
+            string compileToFileDirPath = Path.GetDirectoryName(compileToFilePath);
 
             if (!Directory.Exists(compileToFileDirPath))
                 Directory.CreateDirectory(compileToFileDirPath);
 
-            var ext = Path.GetExtension(path);
+            string ext = Path.GetExtension(path);
 
             ITableSourceFile sourceFile;
-            if (ext == ".tsv") sourceFile = new SimpleTSVFile(path);
-            else sourceFile = new SimpleExcelFile(path);
+            if (ext == ".tsv") 
+                sourceFile = new SimpleTSVFile(path);
+            else 
+                sourceFile = new SimpleExcelFile(path);
             
-            var hash = DoCompilerExcelReader(path, sourceFile, compileToFilePath, compileBaseDir, doRealCompile);
+            TableCompileResult hash = DoCompilerExcelReader(path, sourceFile, compileToFilePath, compileBaseDir, doRealCompile);
+
             return hash;
 
         }

@@ -14,7 +14,7 @@ namespace TableML.Compiler
     //编译结果。一个表一个TableCompileResult
     public class TableCompileResult
     {
-        //表
+        //表文件路径
         public string TabFileFullPath { get; set; }
         public string TabFileRelativePath { get; set; }
 

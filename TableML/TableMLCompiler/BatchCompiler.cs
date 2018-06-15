@@ -9,9 +9,7 @@ namespace TableML.Compiler
 {
 	public class BatchCompiler
 	{
-		/// <summary>
 		/// 是否自动在编译配置表时生成静态代码，如果不需要，外部设置false
-		/// </summary>
 		//public static bool AutoGenerateCode = true;
 
 		/// 当生成的类名，包含数组中字符时，不生成代码。比如
@@ -38,18 +36,18 @@ namespace TableML.Compiler
 
 			foreach (var kv in codeTemplates)
 			{
-				var templateStr = kv.Key;
-				var exportPath = kv.Value;
+                string templateStr = kv.Key;
+                string exportPath = kv.Value;
 
 				// 生成代码
-				var template = Template.Parse(templateStr);
-				var topHash = new Hash();
+                Template template = Template.Parse(templateStr);
+                Hash topHash = new Hash();
 				topHash["NameSpace"] = nameSpace;
 				topHash["Files"] = files;
 
 				if (!string.IsNullOrEmpty(exportPath))
 				{
-					var genCode = template.Render(topHash);
+                    string genCode = template.Render(topHash);
 					if (File.Exists(exportPath)) // 存在，比较是否相同
 					{
 						if (File.ReadAllText(exportPath) != genCode)
@@ -85,35 +83,35 @@ namespace TableML.Compiler
             bool forceAll = false                   //
             )
 		{
-			var results = new List<TableCompileResult>();
-			var compileBaseDir = compilePath;
+            List<TableCompileResult> results = new List<TableCompileResult>();
+            string compileBaseDir = compilePath;
 
             //创建一个Compiler
-            var compiler = new Compiler(new CompilerConfig() { ConditionVars = CompileSettingConditionVars });
+            Compiler compiler = new Compiler(new CompilerConfig() { ConditionVars = CompileSettingConditionVars });
 
             //Excel表的后缀
-			var excelExt = new HashSet<string>() { ".xls", ".xlsx", ".tsv" };
+            HashSet<string> excelExt = new HashSet<string>() { ".xls", ".xlsx", ".tsv" };
 
             //导出表的后缀
-		    var copyExt = new HashSet<string>() {".txt"};
+            HashSet<string> copyExt = new HashSet<string>() {".txt"};
 
-			var findDir = sourcePath;
+            string findDir = sourcePath;
 
 			try
 			{
                 //获取目录下所有的文件
-				var allFiles = Directory.GetFiles(findDir, "*.*", SearchOption.AllDirectories);
-				var allFilesCount = allFiles.Length;
-				var nowFileIndex = -1; // 开头+1， 起始为0
+                string[] allFiles = Directory.GetFiles(findDir, "*.*", SearchOption.AllDirectories);
+                int allFilesCount = allFiles.Length;
+                int nowFileIndex = -1; // 开头+1， 起始为0
 				foreach (var excelPath in allFiles)
 				{
 					nowFileIndex++;
                     //文件后缀
-					var ext = Path.GetExtension(excelPath);
+                    string ext = Path.GetExtension(excelPath);
                     //文件名称
-					var fileName = Path.GetFileNameWithoutExtension(excelPath);
+                    string fileName = Path.GetFileNameWithoutExtension(excelPath);
                     //相对路径
-                    var relativePath = excelPath.Replace(findDir, "").Replace("\\", "/");
+                    string relativePath = excelPath.Replace(findDir, "").Replace("\\", "/");
                     if (relativePath.StartsWith("/"))
                         relativePath = relativePath.Substring(1);
 
@@ -122,10 +120,10 @@ namespace TableML.Compiler
                         //如果是Excel文件。~开头为excel临时文件，不要读
 
                         //输出目录
-                        var compileToPath = string.Format("{0}/{1}", compileBaseDir, Path.ChangeExtension(relativePath, changeExtension));
+                        string compileToPath = string.Format("{0}/{1}", compileBaseDir, Path.ChangeExtension(relativePath, changeExtension));
 
                         //FileInfo
-                        var srcFileInfo = new FileInfo(excelPath);
+                        FileInfo srcFileInfo = new FileInfo(excelPath);
 
 						Console.WriteLine("Compiling Excel to Tab..." + string.Format("{0} -> {1}", excelPath, compileToPath));
 
@@ -133,7 +131,7 @@ namespace TableML.Compiler
 						bool doCompile = true;
 						if (File.Exists(compileToPath))
 						{
-							var toFileInfo = new FileInfo(compileToPath);
+                            FileInfo toFileInfo = new FileInfo(compileToPath);
 
 							if (!forceAll && srcFileInfo.LastWriteTime == toFileInfo.LastWriteTime)
 							{
@@ -152,7 +150,7 @@ namespace TableML.Compiler
 							// 添加模板值
 							results.Add(compileResult);
 
-							var compiledFileInfo = new FileInfo(compileToPath);
+                            FileInfo compiledFileInfo = new FileInfo(compileToPath);
 							compiledFileInfo.LastWriteTime = srcFileInfo.LastWriteTime;
 
 						}
@@ -160,8 +158,7 @@ namespace TableML.Compiler
                     else if (copyExt.Contains(ext))
                     {
                         //如果是txt文件，直接拷贝
-                        var compileToPath = string.Format("{0}/{1}", compileBaseDir,
-							relativePath);
+                        string compileToPath = string.Format("{0}/{1}", compileBaseDir, relativePath);
                         var compileToDir = Path.GetDirectoryName(compileToPath);
                         if (!Directory.Exists(compileToDir))
                             Directory.CreateDirectory(compileToDir);
@@ -184,27 +181,27 @@ namespace TableML.Compiler
 				{
 
 					// 根据编译结果，构建vars，同class名字的，进行合并
-					var templateVars = new Dictionary<string, TableTemplateVars>();
+                    Dictionary<string, TableTemplateVars> templateVars = new Dictionary<string, TableTemplateVars>();
 					foreach (var compileResult in results)
 					{
 						if (!string.IsNullOrEmpty(settingCodeIgnorePattern))
 						{
-							var ignoreRegex = new Regex(settingCodeIgnorePattern);
+                            Regex ignoreRegex = new Regex(settingCodeIgnorePattern);
 							if (ignoreRegex.IsMatch(compileResult.TabFileRelativePath))
 								continue; // ignore this 
 						}
 
-						var customExtraStr = CustomExtraString != null ? CustomExtraString(compileResult) : null;
+                        string customExtraStr = CustomExtraString != null ? CustomExtraString(compileResult) : null;
 
-						var templateVar = new TableTemplateVars(compileResult, customExtraStr);
+                        TableTemplateVars templateVar = new TableTemplateVars(compileResult, customExtraStr);
 
 						// 尝试类过滤
-						var ignoreThisClassName = false;
+                        bool ignoreThisClassName = false;
 						if (GenerateCodeFilesFilter != null)
 						{
 							for (var i = 0; i < GenerateCodeFilesFilter.Length; i++)
 							{
-								var filterClass = GenerateCodeFilesFilter[i];
+                                string filterClass = GenerateCodeFilesFilter[i];
 								if (templateVar.ClassName.Contains(filterClass))
 								{
 									ignoreThisClassName = true;
@@ -226,11 +223,11 @@ namespace TableML.Compiler
 					}
 
 					// 整合成字符串模版使用的List
-					var templateHashes = new List<Hash>();
+                    List<Hash> templateHashes = new List<Hash>();
 					foreach (var kv in templateVars)
 					{
 						var templateVar = kv.Value;
-						var renderTemplateHash = Hash.FromAnonymousObject(templateVar);
+                        Hash renderTemplateHash = Hash.FromAnonymousObject(templateVar);
 						templateHashes.Add(renderTemplateHash);
 					}
 
@@ -257,16 +254,12 @@ namespace TableML.Compiler
 	{
 		public delegate string CustomClassNameDelegate(string originClassName, string filePath);
 
-		/// <summary>
-		/// You can custom class name
-		/// </summary>
+		//自定义类名
 		public static TableTemplateVars.CustomClassNameDelegate CustomClassNameFunc;
 
 		public List<string> RelativePaths = new List<string>();
 
-		/// <summary>
-		///  构建成一个数组"aaa", "bbb"
-		/// </summary>
+		//构建成一个数组"aaa", "bbb"
 		public string TabFilePaths
 		{
 			get
@@ -292,9 +285,7 @@ namespace TableML.Compiler
 			get { return Fields[0]; }
 		}
 
-		/// <summary>
-		/// Custom extra strings
-		/// </summary>
+		//自定义多余的字符串
 		public string Extra { get; private set; }
 
 		public List<Hash> Columns2DefaultValus { get; set; } // column + Default Values
@@ -317,26 +308,24 @@ namespace TableML.Compiler
 			Extra = extraString;
 		}
 
-		/// <summary>
+        //类名
 		/// get a class name from tab file path, default strategy
-		/// </summary>
-		/// <param name="filePath"></param>
-		/// <returns></returns>
 		string DefaultClassNameParse(string tabFilePath)
 		{
 			// 未处理路径的类名, 去掉后缀扩展名
-			var classNameOrigin = Path.ChangeExtension(tabFilePath, null);
+            string classNameOrigin = Path.ChangeExtension(tabFilePath, null);
 
 			// 子目录合并，首字母大写, 组成class name
-			var className = classNameOrigin.Replace("/", "_").Replace("\\", "_");
+            string className = classNameOrigin.Replace("/", "_").Replace("\\", "_");
 			className = className.Replace(" ", "");
-			className = string.Join("", (from name
-				in className.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries)
-										 select (name[0].ToString().ToUpper() + name.Substring(1, name.Length - 1)))
-				.ToArray());
+			className = string.Join(
+                "", 
+                (from name in className.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries)
+                 select (name[0].ToString().ToUpper() + name.Substring(1, name.Length - 1)))
+                .ToArray());
 
 			// 去掉+或#号后面的字符
-			var plusSignIndex = className.IndexOf("+");
+            int plusSignIndex = className.IndexOf("+");
 			className = className.Substring(0, plusSignIndex == -1 ? className.Length : plusSignIndex);
 			plusSignIndex = className.IndexOf("#");
 			className = className.Substring(0, plusSignIndex == -1 ? className.Length : plusSignIndex);
